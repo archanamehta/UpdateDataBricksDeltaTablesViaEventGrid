@@ -29,3 +29,66 @@ Container : data
 Folder : input 
 
 
+
+
+
+Create a job in Azure Databricks
+In this section, you'll perform these tasks:
+
+Create an Azure Databricks workspace.
+Create a notebook.
+Create and populate a Databricks Delta table.
+Add code that inserts rows into the Databricks Delta table.
+Create a Job.
+Create an Azure Databricks workspace
+In this section, you create an Azure Databricks workspace using the Azure portal.
+
+In the Azure portal, select Create a resource > Analytics > Azure Databricks.
+
+
+Create an Azure Databricks workspace
+In this section, you create an Azure Databricks workspace using the Azure portal.
+
+In the Azure portal, select Create a resource > Analytics > Azure Databricks.
+
+
+Create a Spark cluster in Databricks
+In the Azure portal, go to the Azure Databricks workspace that you created, and then select Launch Workspace.
+
+You are redirected to the Azure Databricks portal. From the portal, select New > Cluster.
+
+
+
+
+SAVE THE FOLLOWING CONFIGURATIONS 
+
+---Azure Storage Account 
+Storage Account Name : processordersstore
+Storage Key : <Storage Key> 
+Storage Connection : <Storage Connection String> 
+  
+--Create Application
+Application Name : dataprocessing 
+Application Id : <Application Id > 
+Tenant Id : <Tenant Id> 
+Object Id : <Object Id > 
+client-Secret : <client Secret> 
+Value : <Client Secret Value > 
+  
+  
+--Azure Key Vault 
+Key Vault : <URL> ie: https://archiekv.vault.azure.net/ 
+Secret Name : adlsgen2secret
+Secret Value : <Secret Value > 
+
+
+
+Create and populate a Databricks Delta table
+In the notebook that you created, copy and paste the following code block into the first cell, but don't run this code yet.
+
+
+
+
+
+
+
