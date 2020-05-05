@@ -17,15 +17,14 @@ In this tutorial, we will create the following Azure Services
 8. Create Azure Key Vault
 
 ### Prerequisites ## 
-* Create Service Principal and once the App has been registered save the Application id , Tenant id and Secret Details. In our case Service Prinicipal with the name orderprocessing has been created . Following this link to get details how to create Service Principal		https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal
+* Create Service Principal: Once the service principal App has been registered save the Application id , Tenant id and Secret Details. In our case Service Prinicipal with the name orderprocessing has been created . Following this link to get details how to create Service Principal		https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal
 
-* Create Azure Key Vault , Select "Access policies" and then click "Add Access Policy" to create a new Pplicy. Select the "key, secret, and certificate permissions" you want to grant your application. Select the service principal (in our case Service prinipal name : dataprocessing) created previously. Then select Add to add the access policy and Save to commit your changes.
+* Create Azure Key Vault: Once Azure Key Vault has been created ; Select "Access policies" and then click "Add Access Policy" to create a new Pplicy. Select the "key, secret, and certificate permissions" you want to grant your application. Select the service principal (in our case Service prinipal name : dataprocessing) created previously. Then select Add to add the access policy and Save to commit your changes. Save the value of DNS Name . In our case DNS Name:https://archiekv.vault.azure.net/
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/AzureKeyVaultAccessPolicy.png)
- 
- Create a Secret and save the Name of the Secret. In our case Secret name is : adlsgen2secret. 
+ Create Azure Key Vault Secret and save the Name of the Secret. In our case Secret name is : adlsgen2secret. 
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateAzureKeyVaultSecret.png)
 
-* Make sure the Azure Storage Account has "Storage Blob Data Owner" role assigned to the Service Prinipal. Following should be the Access Controls for Storage Account 
+* Make sure the Azure Storage Account created has "Storage Blob Data Owner" role assigned to the Service Prinipal. Following should be the Access Controls for Storage Account 
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/AzureStorageAccessControl.png)
 
 ### Create a ResourceGroup ie: DataProcessingRG ###
@@ -52,10 +51,8 @@ In the Azure portal, go to the Azure Databricks workspace that you created, and 
 ### Create Azure Databricks Secret Scope ###
 Based on the Azure Databricks Workspace Name,  generate the following URL to Create Secret Scope. In our case the name of the Databricks Workspace is adb-410949980884417.17.azuredatabricks.net hence the generate URL is : https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope 
 
-Go to the following URL ie: https://<databricks-instance>#secrets/createScope to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase.Enter the DNS name of the Azure Key Vault Created earlier, the Resource Id is as follows eg: /subscriptions/<Subscription Id>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<Azure Key Vault name >. In our case this is the Resouurce id : /subscriptions/<Subscription Id> /resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
+Go to the following URL ie: https://<databricks-instance>#secrets/createScope to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase. Enter the DNS name of the Azure Key Vault Created earlier, the Resource Id is as follows eg: /subscriptions/<Subscription Id>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<Azure Key Vault name >. In our case this is the Resouurce id : /subscriptions/<Subscription Id> /resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADBSecretScope.png)
-
-
 
 
 ### Create and populate a Databricks Delta table. ### 
@@ -134,18 +131,24 @@ WHEN NOT MATCHED
 Select if rows from the file have been inserted 
    %sql select * from customer_data
     
-### Create a job in Azure Databricks ### 
-In this section, you'll perform these tasks:
+## Create a job within Azure Databricks ## 
+Create a Job that runs the notebook that you created earlier. Later, you'll create an Azure Function that runs this job when an event is raised.
+Click Jobs.
+In the Jobs page, click Create Job. Give the job a name, and then choose the upsert-order-data workbook. In our case the Job Name: upsert-order-data and NoteBook Name: dataprocessing
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADBSecretScope.png)
 
 
 # Create an Azure Function
-Create an Azure Function that runs Azure Databricks Job.
+ In the upper corner of the Databricks workspace, choose the people icon, and then choose User settings. Click the Generate new token button, and then click the Generate button. Make sure to copy the token to safe place. Your Azure Function needs this token to authenticate with Databricks so that it can run the Job.
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/GenerateADBToken.png)
 
-In the upper corner of the Databricks workspace, choose the people icon, and then choose User settings.
+Select the Create a resource button found on the upper left corner of the Azure portal, then select Compute > Function App. In the Create page of the Function App, make sure to select .NET Core for the runtime stack, and make sure to configure an Application Insights instance.
 
-In the Overview page of the Function App, click Configuration.
-
-
+In the Overview page of the Function App, click Configuration. In our case the Application setting is as follows 
+DBX_INSTANCE: <Azure Databricks Name> ie:adb-410949980884417.17.azuredatabricks.net
+DBX_PAT: <This is the Value we saved from Azure DataBricks User Setting above> 
+DBX_JOB_ID: 1 
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateAzureFunctionsConfigurations.png)
 
 
 ### SAVE THE FOLLOWING CONFIGURATIONS ### 
@@ -179,19 +182,6 @@ Object Id : 791d4933-9de5-4ee8-a048-dbf69fba3a45
 Go to Azure Storage Explorer and add the Above Object Id to ADLS Gen2 Folders via Manage Access 
 
 
--- Grant Roles to ADSL Gen 2
-
-
-
-
-# Create a Job within Azure Data Bricks # 
-Create a Job that runs the notebook that you created earlier. Later, you'll create an Azure Function that runs this job when an event is raised.
-
-Click Jobs.
-
-In the Jobs page, click Create Job.
-
-Give the job a name, and then choose the upsert-order-data workbook.
 
 
 
