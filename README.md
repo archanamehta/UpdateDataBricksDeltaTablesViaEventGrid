@@ -22,14 +22,10 @@ In this tutorial, we will create the following Azure Services
 
 ### Create a ResourceGroup ie: DataProcessingRG ###
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateResourceGroup.png)
-
-
 ### Create an ADLS Gen2 Storage Account ### 
 Create an ADLS Gen 2 Account called "processorderstore". Within this storage account create a Container called "data" and Folder called "input".  
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADLSGen2Account.png)
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateStorageContainer.png)
-
-
 ### Create an Azure Databricks workspace ###
 In this section, you create an Azure Databricks workspace using the Azure portal.
 
