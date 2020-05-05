@@ -50,8 +50,9 @@ In the Azure portal, go to the Azure Databricks workspace that you created, and 
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateDataBricksClusterv2.png)
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateDataBricksClusterv3.png)
 ### Create Azure Databricks Secret Scope ###
-Based on the Azure Databricks Workspace Name,  create the following URL to Create Scope. In our case the name of the Databricks Workspace is adb-410949980884417.17.azuredatabricks.net hence this URL https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope 
-Hence go to https://<databricks-instance>#secrets/createScope URL to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase.Enter the DNA name of the Azure Key Vault Created earlier , the Resource Id is as follows eg: /subscriptions/<Subscription Id>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<Azure Key Vault name > . In our case this is the Resouurce id : /subscriptions/cf0a8ebb-665e-48d1-82f7-71657b0f9c28/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
+Based on the Azure Databricks Workspace Name,  generate the following URL to Create Secret Scope. In our case the name of the Databricks Workspace is adb-410949980884417.17.azuredatabricks.net hence the generate URL is : https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope 
+
+Go to the following URL ie: https://<databricks-instance>#secrets/createScope to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase.Enter the DNS name of the Azure Key Vault Created earlier, the Resource Id is as follows eg: /subscriptions/<Subscription Id>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<Azure Key Vault name >. In our case this is the Resouurce id : /subscriptions/<Subscription Id> /resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADBSecretScope.png)
 
 
