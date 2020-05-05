@@ -22,30 +22,14 @@ In this tutorial, we will create the following Azure Services
 
 
 ### Create a ResourceGroup ie: DataProcessingRG ###
+! [Create ResourceGroup](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateResourceGroup.png)
 
-(https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateResourceGroup.png)
 
-
-Create an ADLS Gen2 Storage Account called "processorderstore". Within this storage account create 
-Container : data
-Folder : input 
+### Create an ADLS Gen2 Storage Account ### 
+Create an ADLS Gen 2 Account called "processorderstore". Within this storage account create a Container called "data" and Folder called "input".  
 
 
 
-
-
-Create a job in Azure Databricks
-In this section, you'll perform these tasks:
-
-Create an Azure Databricks workspace.
-Create a notebook.
-Create and populate a Databricks Delta table.
-Add code that inserts rows into the Databricks Delta table.
-Create a Job.
-Create an Azure Databricks workspace
-In this section, you create an Azure Databricks workspace using the Azure portal.
-
-In the Azure portal, select Create a resource > Analytics > Azure Databricks.
 
 
 ### Create an Azure Databricks workspace ###
@@ -54,11 +38,91 @@ In this section, you create an Azure Databricks workspace using the Azure portal
 In the Azure portal, select Create a resource > Analytics > Azure Databricks.
 
 
+
 ### Create a Spark cluster in Databricks ###
 In the Azure portal, go to the Azure Databricks workspace that you created, and then select Launch Workspace.
 
 You are redirected to the Azure Databricks portal. From the portal, select New > Cluster.
 
+
+### Create and populate a Databricks Delta table. ### 
+In the Python notebook that you created, copy and paste the following code block into the first cell, but don't run this code yet.
+This code creates a widget named source_file. Later, you'll create an Azure Function that calls this code and passes a file path to that widget. This code also authenticates your service principal with the storage account, and creates some variables that you'll use in other cells.
+
+
+dbutils.widgets.text('source_file', "", "Source File")
+spark.conf.set("fs.azure.account.auth.type.processordersstore.dfs.core.windows.net", "OAuth") 
+spark.conf.set("fs.azure.account.oauth.provider.type.processordersstore.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+spark.conf.set("fs.azure.account.oauth2.client.id.processordersstore.dfs.core.windows.net", "49c851f7-c7f9-49eb-9c4a-8bf6636a0311") 
+spark.conf.set("fs.azure.account.oauth2.client.secret.processordersstore.dfs.core.windows.net", dbutils.secrets.get(scope = "adlsen2adbscope", key = "adlsgen2secret"))
+spark.conf.set("fs.azure.account.oauth2.client.endpoint.processordersstore.dfs.core.windows.net", "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/oauth2/token")
+
+
+adlsPath = 'abfss://data@processordersstore.dfs.core.windows.net/'
+inputPath = adlsPath + dbutils.widgets.get('source_file')
+customerTablePath = adlsPath + 'delta-tables/customers'
+
+
+This code creates the Databricks Delta table in your storage account, and then loads some initial data from the csv file that you uploaded earlier.
+
+from pyspark.sql.types import StructType, StructField, DoubleType, IntegerType, StringType
+inputSchema = StructType([
+StructField("InvoiceNo", IntegerType(), True),
+StructField("StockCode", StringType(), True),
+StructField("Description", StringType(), True),
+StructField("Quantity", IntegerType(), True),
+StructField("InvoiceDate", StringType(), True),
+StructField("UnitPrice", DoubleType(), True),
+StructField("CustomerID", IntegerType(), True),
+StructField("Country", StringType(), True)
+])
+
+rawDataDF = (spark.read.option("header", "true").schema(inputSchema).csv(adlsPath + 'input'))
+(rawDataDF.write.mode("overwrite").format("delta").saveAsTable("customer_data", path=customerTablePath))
+
+
+After this above code block successfully runs, remove this code block from your notebook.
+
+## Add code that inserts rows into the Databricks Delta table ## 
+This code inserts data into a temporary table view by using data from a csv file. The path to that csv file comes from the input widget that you created in an earlier step.
+
+upsertDataDF = (spark.read.option("header", "true").csv(inputPath))
+upsertDataDF.createOrReplaceTempView("customer_data_to_upsert")
+
+
+Add the following code to merge the contents of the temporary table view with the Databricks Delta table.
+
+%sql
+MERGE INTO customer_data cd
+USING customer_data_to_upsert cu
+ON cd.CustomerID = cu.CustomerID
+WHEN MATCHED THEN
+  UPDATE SET
+    cd.StockCode = cu.StockCode,
+    cd.Description = cu.Description,
+    cd.InvoiceNo = cu.InvoiceNo,
+    cd.Quantity = cu.Quantity,
+    cd.InvoiceDate = cu.InvoiceDate,
+    cd.UnitPrice = cu.UnitPrice,
+    cd.Country = cu.Country
+WHEN NOT MATCHED
+  THEN INSERT (InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country)
+  VALUES (
+    cu.InvoiceNo,
+    cu.StockCode,
+    cu.Description,
+    cu.Quantity,
+    cu.InvoiceDate,
+    cu.UnitPrice,
+    cu.CustomerID,
+    cu.Country)
+    
+    
+
+
+
+### Create a job in Azure Databricks ### 
+In this section, you'll perform these tasks:
 
 
 
@@ -100,15 +164,10 @@ Go to Azure Storage Explorer and add the Above Object Id to ADLS Gen2 Folders vi
 
 
 
-
-
 ### Create and populate a Databricks Delta table ###
 In the notebook that you created, copy and paste the following code block into the first cell, but don't run this code yet.
 
-
-
 dbutils.widgets.text('source_file', "", "Source File")
-
 spark.conf.set("fs.azure.account.auth.type.processordersstore.dfs.core.windows.net", "OAuth") 
 spark.conf.set("fs.azure.account.oauth.provider.type.processordersstore.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
 spark.conf.set("fs.azure.account.oauth2.client.id.processordersstore.dfs.core.windows.net", "<application id>") 
