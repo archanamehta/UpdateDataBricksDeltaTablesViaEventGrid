@@ -17,18 +17,23 @@ In this tutorial, we will create the following Azure Services
 8. Create Azure Key Vault
 
 ### Prerequisites ## 
-* Create Service Principal: Once the service principal App has been registered save the Application id , Tenant id and Secret Details. In our case Service Prinicipal with the name orderprocessing has been created . Following this link to get details how to create Service Principal		https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal
+* Create Service Principal: Once the service principal App has been registered save the Application id , Tenant id and Secret Details. In our case Service Prinicipal with the name orderprocessing has been created . Following this link to get details how to create Service Principal https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal
 
 * Create Azure Key Vault: Once Azure Key Vault has been created ; Select "Access policies" and then click "Add Access Policy" to create a new Pplicy. Select the "key, secret, and certificate permissions" you want to grant your application. Select the service principal (in our case Service prinipal name : dataprocessing) created previously. Then select Add to add the access policy and Save to commit your changes. Save the value of DNS Name . In our case DNS Name:https://archiekv.vault.azure.net/
+
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/AzureKeyVaultAccessPolicy.png)
  Create Azure Key Vault Secret and save the Name of the Secret. In our case Secret name is : adlsgen2secret. 
+ 
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateAzureKeyVaultSecret.png)
 
 * Make sure the Azure Storage Account created has "Storage Blob Data Owner" role assigned to the Service Prinipal. Following should be the Access Controls for Storage Account 
+
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/AzureStorageAccessControl.png)
+
 
 ### Create a ResourceGroup ie: DataProcessingRG ###
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateResourceGroup.png)
+
 ### Create an ADLS Gen2 Storage Account ### 
 Create an ADLS Gen 2 Account called "processorderstore". Within this storage account create a Container called "data" and Folder called "input".  
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADLSGen2Account.png)
@@ -44,10 +49,12 @@ InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice,CustomerID,Countr
 In this section, you create an Azure Databricks workspace using the Azure portal.
 From the Azure portal, select Create a resource > Analytics > Azure Databricks.
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateDataBricksClusterv1.png)
+
 ### Create a Spark cluster in Databricks ###
 In the Azure portal, go to the Azure Databricks workspace that you created, and then select Launch Workspace.You are redirected to the Azure Databricks portal. From the portal, select New > Cluster.
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateDataBricksClusterv2.png)
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateDataBricksClusterv3.png)
+
 ### Create Azure Databricks Secret Scope ###
 Based on the Azure Databricks Workspace Name,  generate the following URL to Create Secret Scope. In our case the name of the Databricks Workspace is adb-410949980884417.17.azuredatabricks.net hence the generate URL is : https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope 
 
