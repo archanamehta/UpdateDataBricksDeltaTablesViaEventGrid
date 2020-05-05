@@ -118,7 +118,7 @@ inputPath = "/mnt/adlsgen2storearchie100/data.csv"
 customerTablePath = "/mnt/adlsgen2storearchie100/delta-tables/customers"
 
 
-#### This code creates the Databricks Delta table Within your storage account, and then loads some initial data from the csv file that you uploaded earlier.####
+#### This code creates the Databricks Delta table Within your storage account, and then loads some initial data from the csv file that you uploaded earlier.
 
 from pyspark.sql.types import StructType, StructField, DoubleType, IntegerType, StringType
 inputSchema = StructType([
@@ -135,6 +135,7 @@ StructField("Country", StringType(), True)
 rawDataDF = (spark.read.option("header", "true").schema(inputSchema).csv(adlsPath + 'input'))
 (rawDataDF.write.mode("overwrite").format("delta").saveAsTable("customer_data", path=customerTablePath))
 #### After this above code block successfully runs, remove this code block from your notebook. ####
+
 
 
 #### This code inserts data into a temporary table view by using data from a csv file. The path to that csv file comes from the input widget that you created in an earlier step. ####
@@ -170,7 +171,7 @@ WHEN NOT MATCHED
     cu.CustomerID,
     cu.Country)
    
-Select if rows from the file have been inserted 
+#### Select if rows from the file have been inserted 
    %sql select * from customer_data
     
 ## Create a job within Azure Databricks ## 
@@ -188,6 +189,51 @@ Click Jobs.In the Jobs page, click Create Job. Give the job a name, and then cho
 
 Select the Create a resource button found on the upper left corner of the Azure portal, then select Compute > Function App. In the Create page of the Function App, make sure to select .NET Core for the runtime stack, and make sure to configure an Application Insights instance.
 
+In the New Function pane, name the function UpsertOrder, and then click the Create button. Replace the contents of the code file with this code, and then click the Save button: 
+
+using "Microsoft.Azure.EventGrid"
+using "Newtonsoft.Json"
+using Microsoft.Azure.EventGrid.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+private static HttpClient httpClient = new HttpClient();
+
+public static async Task Run(EventGridEvent eventGridEvent, ILogger log)
+{
+    log.LogInformation("Event Subject: " + eventGridEvent.Subject);
+    log.LogInformation("Event Topic: " + eventGridEvent.Topic);
+    log.LogInformation("Event Type: " + eventGridEvent.EventType);
+    log.LogInformation(eventGridEvent.Data.ToString());
+
+    if (eventGridEvent.EventType == "Microsoft.Storage.BlobCreated" | | eventGridEvent.EventType == "Microsoft.Storage.FileRenamed") {
+        var fileData = ((JObject)(eventGridEvent.Data)).ToObject<StorageBlobCreatedEventData>();
+        if (fileData.Api == "FlushWithClose") {
+            log.LogInformation("Triggering Databricks Job for file: " + fileData.Url);
+            var fileUrl = new Uri(fileData.Url);
+            var httpRequestMessage = new HttpRequestMessage {
+                Method = HttpMethod.Post,
+                RequestUri = new Uri(String.Format("https://{0}/api/2.0/jobs/run-now", System.Environment.GetEnvironmentVariable("DBX_INSTANCE", EnvironmentVariableTarget.Process))),
+                Headers = {
+                    { System.Net.HttpRequestHeader.Authorization.ToString(), "Bearer " +  System.Environment.GetEnvironmentVariable ("DBX_PAT", EnvironmentVariableTarget.Process)},
+                    { System.Net.HttpRequestHeader.ContentType.ToString (), "application/json" }
+                },
+                Content = new StringContent(JsonConvert.SerializeObject(new {
+                    job_id = System.Environment.GetEnvironmentVariable ("DBX_JOB_ID", EnvironmentVariableTarget.Process) ,
+                    notebook_params = new {
+                        source_file = String.Join("", fileUrl.Segments.Skip(2))
+                    }
+                }))
+             };
+            var response = await httpClient.SendAsync(httpRequestMessage);
+            response.EnsureSuccessStatusCode();
+        }
+    }
+}
+This code parses information about the storage event that was raised, and then creates a request message with url of the file that triggered the event. As part of the message, the function passes a value to the source_file widget that you created earlier. the function code sends the message to the Databricks Job and uses the token that you obtained earlier as authentication.
+
+
+
 In the Overview page of the Function App, click Configuration. In our case the Application setting is as follows 
 DBX_INSTANCE: <Azure Databricks Name> ie:adb-410949980884417.17.azuredatabricks.net
 DBX_PAT: <This is the Value we saved from Azure DataBricks User Setting above> 
@@ -196,14 +242,33 @@ DBX_JOB_ID: 1
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateAzureFunctionsConfigurations.png)
 
 
+# Create Event Grid Subscription 
+In this section, you'll create an Event Grid subscription that calls the Azure Function when files are uploaded to the storage account.
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateEventGridSubscription.png)
+
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateEventGridSubscriptionV2.png)
+
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateEventGridSubscriptionV3.png)
 
 
+## Test the Event Grid subscription
 
+Create a file named customer-order.csv, paste the following information into that file, and save it to your local computer.
 
+File Name : customer-order.csv 
+InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice,CustomerID,Country
+536371,99999,EverGlow Single,228,1/1/2018 9:01,33.85,20993,Sierra Leone
 
+#### In Storage Explorer, upload this file to the input folder of your storage account.
 
+Uploading a file raises the Microsoft.Storage.BlobCreated event. Event Grid notifies all subscribers to that event. In our case, the Azure Function is the only subscriber. The Azure Function parses the event parameters to determine which event occurred. It then passes the URL of the file to the Databricks Job. The Databricks Job reads the file, and adds a row to the Databricks Delta table that is located your storage account.
 
+#### To check if the job succeeded, open your databricks workspace, click the Jobs button, and then open your job.
 
+#### Select the job to open the job page.
+
+In a new workbook cell, run this query in a cell to see the updated delta table.
+%sql select * from customer_data
 
 
 
