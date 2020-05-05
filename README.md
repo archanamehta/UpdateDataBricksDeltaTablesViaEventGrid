@@ -35,8 +35,8 @@ In this tutorial, we will create the following Azure Services
 ### SAVE THE FOLLOWING CONFIGURATIONS ### 
 --- Azure Storage Account--- 
 Storage Account Name : processordersstore
-Storage Key : <Storage Key> 
-Storage Connection : <Storage Connection String> 
+Storage Key : <<Storage Key>> 
+Storage Connection : <<Storage Connection String>> 
   
 --- Create Application --- 
 Application Name : dataprocessing 
