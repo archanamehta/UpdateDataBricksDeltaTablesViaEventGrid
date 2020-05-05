@@ -1,7 +1,5 @@
 # Update Azure Data Bricks Delta Tables Via Event Grid and Functions 
 
-
-### Updating ADB Delta Tables ###
 This solution enables a user to populate a Databricks Delta table by uploading a comma-separated values (csv) file that 
 describes a sales order to ADLS Gen 2 Azure Storage. This solution is implemented by connecting together an Event Grid subscription, an Azure Function, and a Job in Azure Databricks.
  When a file is uploaded/updated within Azure Storage ie: ADLS Gen 2, this execute Event Grid Trigger which calls the Azure Functions (Function Name : orderprocessing) end point. The Function executed Azure Databricks Job which calls the Azure Databricks Notebook . The code within the Azure DataBricks Notebook updated the Delta Tables.    
@@ -21,7 +19,9 @@ In this tutorial, we will create the following Azure Services
 ### Prerequisites ## 
 * Create Service Principal and once the App has been registered save the Application id , Tenant id and Secret Details. In our case Service Prinicipal with the name orderprocessing has been created . Following this link to get details how to create Service Principal		https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal
 
-* Create Azure Key Vault , Select "Add access policy", then select the "key, secret, and certificate permissions" you want to grant your application. Select the service principal (in our case Service prinipal name : dataprocessing) created previously.Select Add to add the access policy, then Save to commit your changes.
+* Create Azure Key Vault , Select "Access policies" and then click "Add Access Policy" to create a new Pplicy. Select the "key, secret, and certificate permissions" you want to grant your application. Select the service principal (in our case Service prinipal name : dataprocessing) created previously. Then select Add to add the access policy and Save to commit your changes.
+ ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/AzureKeyVaultAccessPolicy.png)
+ 
  Create a Secret and save the Name of the Secret. In our case Secret name is : adlsgen2secret. 
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateAzureKeyVaultSecret.png)
 
@@ -49,16 +49,23 @@ From the Azure portal, select Create a resource > Analytics > Azure Databricks.
 In the Azure portal, go to the Azure Databricks workspace that you created, and then select Launch Workspace.You are redirected to the Azure Databricks portal. From the portal, select New > Cluster.
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateDataBricksClusterv2.png)
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateDataBricksClusterv3.png)
+### Create Azure Databricks Secret Scope ###
+Based on the Azure Databricks Workspace Name,  create the following URL to Create Scope. In our case the name of the Databricks Workspace is adb-410949980884417.17.azuredatabricks.net hence this URL https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope 
+Hence go to https://<databricks-instance>#secrets/createScope URL to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase.Enter the DNA name of the Azure Key Vault Created earlier , the Resource Id is as follows eg: /subscriptions/<Subscription Id>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<Azure Key Vault name > . In our case this is the Resouurce id : /subscriptions/cf0a8ebb-665e-48d1-82f7-71657b0f9c28/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADBSecretScope.png)
+
+
+
+
 ### Create and populate a Databricks Delta table. ### 
 Create a Python Notebook ; copy and paste the following code block into the first cell, but don't run this code yet.
 This code creates a widget named source_file. Later, you'll create an Azure Function that calls this code and passes a file path to that widget. This code also authenticates your service principal with the storage account, and creates some variables that you'll use in other cells 
-
 
 dbutils.widgets.text('source_file', "", "Source File")
 spark.conf.set("fs.azure.account.auth.type.processordersstore.dfs.core.windows.net", "OAuth") 
 spark.conf.set("fs.azure.account.oauth.provider.type.processordersstore.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
 spark.conf.set("fs.azure.account.oauth2.client.id.processordersstore.dfs.core.windows.net", "<Application Id> ") 
-spark.conf.set("fs.azure.account.oauth2.client.secret.processordersstore.dfs.core.windows.net", dbutils.secrets.get(scope = "adlsen2adbscope", key = "adlsgen2secret"))
+spark.conf.set("fs.azure.account.oauth2.client.secret.processordersstore.dfs.core.windows.net", dbutils.secrets.get(scope = "adlsen2adbscope", key = "<Azure Key Vault Secret>"))
 spark.conf.set("fs.azure.account.oauth2.client.endpoint.processordersstore.dfs.core.windows.net", "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/oauth2/token")
 adlsPath = 'abfss://data@processordersstore.dfs.core.windows.net/'
 inputPath = adlsPath + dbutils.widgets.get('source_file')
