@@ -33,33 +33,33 @@ In this tutorial, we will create the following Azure Services
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/AzureStorageAccessControl.png)
 
 ### SAVE THE FOLLOWING CONFIGURATIONS ### 
---- Azure Storage Account--- 
-Storage Account Name : processordersstore
-Storage Key : <<Storage Key>> 
-Storage Connection : <<Storage Connection String>> 
+#### Azure Storage Account
+	Storage Account Name: processordersstore
+	Storage Key:<<Storage Key>> 
+	Storage Connection : <<Storage Connection String>> 
   
---- Create Application --- 
-Application Name : dataprocessing 
-Application Id : <Application Id > 
-Tenant Id : <Tenant Id> 
-Object Id : <Object Id > 
-client-Secret : <client Secret> 
-Value : <Client Secret Value > 
+#### Create Application  
+	Application Name : dataprocessing 
+	Application Id : <Application Id > 
+	Tenant Id : <Tenant Id> 
+	Object Id : <Object Id > 
+	client-Secret : <client Secret> 
+	Value : <Client Secret Value > 
     
---- Azure Key Vault --- 
-Key Vault : <URL> ie: https://archiekv.vault.azure.net/ 
-Secret Name : adlsgen2secret
-Secret Value : <Secret Value > 
+#### Azure Key Vault 
+	Key Vault : <URL> ie: https://archiekv.vault.azure.net/ 
+	Secret Name : adlsgen2secret
+	Secret Value : <Secret Value > 
 
---- Azure Data Bricks Scope --- 
-Create ADB Scope URL : https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope
-ADB Scope : adlsen2adbscope
-Resource Id : /subscriptions/<subscription id>/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
+#### Azure Data Bricks Scope 
+	Create ADB Scope URL : https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope
+	ADB Scope : adlsen2adbscope
+	Resource Id : /subscriptions/<subscription id>/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
 
---- Granting the Service Principal permissions in ADLS Gen 2 --- 
-az ad sp show --id <Application Id> --query objectId
-Object Id : 791d4933-9de5-4ee8-a048-dbf69fba3a45
-Go to Azure Storage Explorer and add the Above Object Id to ADLS Gen2 Folders via Manage Access 
+#### Granting the Service Principal permissions in ADLS Gen 2 
+	az ad sp show --id <Application Id> --query objectId
+	Object Id : 791d4933-9de5-4ee8-a048-dbf69fba3a45
+	Go to Azure Storage Explorer and add the Above Object Id to ADLS Gen2 Folders via Manage Access 
 
 
 ### Create a ResourceGroup ie: DataProcessingRG ###
@@ -70,7 +70,8 @@ Create a sales order
 First, create a csv file that describes a sales order, and then upload that file to the storage account. Later, you'll use the data from this file to populate the first row in our Databricks Delta table.
 
 Paste the following text into a text editor to create the CSV file ie: data.csv
-InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice,CustomerID,Country
+
+#### InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice,CustomerID,Country
 536365,85123A,WHITE HANGING HEART T-LIGHT HOLDER,6,12/1/2010 8:26,2.55,17850,United Kingdom
 
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateStorageContainer.png)
@@ -89,9 +90,12 @@ In the Azure portal, go to the Azure Databricks workspace that you created, and 
 Based on the Azure Databricks Workspace Name,  generate the following URL to Create Secret Scope. In our case the name of the Databricks Workspace is "adb-410949980884417.17.azuredatabricks.net";  
 Hence the generate URL is:https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope 
 
-Go to the following URL ie: https://<databricks-instance>#secrets/createScope to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase. 
-	Enter the DNS name of the Azure Key Vault created earlier
-	Enter the Resource Id as follows eg: /subscriptions/<Subscription Id>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<Azure Key Vault name >. In our case this is the Resouurce id : /subscriptions/<Subscription Id> /resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
+Go to the following URL ie: https://<<<databricks-instance>>>#secrets/createScope to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase. 
+
+#### Enter the DNS name of the Azure Key Vault created earlier
+#### Enter the Resource Id as follows eg: /subscriptions/<<<Subscription Id>>>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<<<Azure Key Vault name >>>. 
+
+In our case Resouurce id : /subscriptions/<Subscription Id>/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
 	
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADBSecretScope.png)
 
@@ -189,22 +193,23 @@ Click Jobs.In the Jobs page, click Create Job. Give the job a name, and then cho
 
 Select the Create a resource button found on the upper left corner of the Azure portal, then select Compute > Function App. In the Create page of the Function App, make sure to select .NET Core for the runtime stack, and make sure to configure an Application Insights instance.
 
-In the New Function pane, name the function UpsertOrder, and then click the Create button. Replace the contents of the code file with this code, and then click the Save button: 
+In the New Function pane, name the function "UpsertOrder", and then click the Create button. Replace the contents of the code file with this code, and then click the Save button: 
 
-using "Microsoft.Azure.EventGrid"
-using "Newtonsoft.Json"
-using Microsoft.Azure.EventGrid.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+--------------------------------------------------
+	using "Microsoft.Azure.EventGrid"
+	using "Newtonsoft.Json"
+	using Microsoft.Azure.EventGrid.Models;
+	using Newtonsoft.Json;
+	using Newtonsoft.Json.Linq;
 
-private static HttpClient httpClient = new HttpClient();
+	private static HttpClient httpClient = new HttpClient();
 
-public static async Task Run(EventGridEvent eventGridEvent, ILogger log)
-{
-    log.LogInformation("Event Subject: " + eventGridEvent.Subject);
-    log.LogInformation("Event Topic: " + eventGridEvent.Topic);
-    log.LogInformation("Event Type: " + eventGridEvent.EventType);
-    log.LogInformation(eventGridEvent.Data.ToString());
+	public static async Task Run(EventGridEvent eventGridEvent, ILogger log)
+	{
+    	log.LogInformation("Event Subject: " + eventGridEvent.Subject);
+    	log.LogInformation("Event Topic: " + eventGridEvent.Topic);
+    	log.LogInformation("Event Type: " + eventGridEvent.EventType);
+    	log.LogInformation(eventGridEvent.Data.ToString());
 
     if (eventGridEvent.EventType == "Microsoft.Storage.BlobCreated" | | eventGridEvent.EventType == "Microsoft.Storage.FileRenamed") {
         var fileData = ((JObject)(eventGridEvent.Data)).ToObject<StorageBlobCreatedEventData>();
@@ -227,23 +232,26 @@ public static async Task Run(EventGridEvent eventGridEvent, ILogger log)
              };
             var response = await httpClient.SendAsync(httpRequestMessage);
             response.EnsureSuccessStatusCode();
-        }
-    }
-}
+	        }
+    		}
+		}
+
+
 This code parses information about the storage event that was raised, and then creates a request message with url of the file that triggered the event. As part of the message, the function passes a value to the source_file widget that you created earlier. the function code sends the message to the Databricks Job and uses the token that you obtained earlier as authentication.
 
 
 
 In the Overview page of the Function App, click Configuration. In our case the Application setting is as follows 
-DBX_INSTANCE: <Azure Databricks Name> ie:adb-410949980884417.17.azuredatabricks.net
-DBX_PAT: <This is the Value we saved from Azure DataBricks User Setting above> 
-DBX_JOB_ID: 1 
+		DBX_INSTANCE: <Azure Databricks Name> ie:adb-410949980884417.17.azuredatabricks.net
+		DBX_PAT: <This is the Value we saved from Azure DataBricks User Setting above> 
+		DBX_JOB_ID: 1 
 	
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateAzureFunctionsConfigurations.png)
 
 
 # Create Event Grid Subscription 
 In this section, you'll create an Event Grid subscription that calls the Azure Function when files are uploaded to the storage account.
+
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateEventGridSubscription.png)
 
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateEventGridSubscriptionV2.png)
@@ -255,9 +263,9 @@ In this section, you'll create an Event Grid subscription that calls the Azure F
 
 Create a file named customer-order.csv, paste the following information into that file, and save it to your local computer.
 
-File Name : customer-order.csv 
-InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice,CustomerID,Country
-536371,99999,EverGlow Single,228,1/1/2018 9:01,33.85,20993,Sierra Leone
+	File Name : customer-order.csv 
+	InvoiceNo,StockCode,Description,Quantity,InvoiceDate,UnitPrice,CustomerID,Country
+	536371,99999,EverGlow Single,228,1/1/2018 9:01,33.85,20993,Sierra Leone
 
 #### In Storage Explorer, upload this file to the input folder of your storage account.
 
@@ -267,8 +275,8 @@ Uploading a file raises the Microsoft.Storage.BlobCreated event. Event Grid noti
 
 #### Select the job to open the job page.
 
-In a new workbook cell, run this query in a cell to see the updated delta table.
-%sql select * from customer_data
+	In a new workbook cell, run this query in a cell to see the updated delta table.
+	%sql select * from customer_data
 
 
 
