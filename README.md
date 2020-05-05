@@ -20,16 +20,14 @@ In this tutorial, we will create the following Azure Services
 9. Create Azure Key Vault
 
 
-
 ### Create a ResourceGroup ie: DataProcessingRG ###
-! [Create ResourceGroup](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateResourceGroup.png)
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateResourceGroup.png)
 
 
 ### Create an ADLS Gen2 Storage Account ### 
 Create an ADLS Gen 2 Account called "processorderstore". Within this storage account create a Container called "data" and Folder called "input".  
-
-
-
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADLSGen2Account.png)
+![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateStorageContainer.png)
 
 
 ### Create an Azure Databricks workspace ###
@@ -60,11 +58,10 @@ adlsPath = 'abfss://data@processordersstore.dfs.core.windows.net/'
 inputPath = adlsPath + dbutils.widgets.get('source_file')
 customerTablePath = adlsPath + 'delta-tables/customers'
 
-# Create a Mount of the Storage # 
+Create a Mount of the Azure Storage 
 dbutils.fs.mount(
 	  source = "abfss://data@processordersstore.dfs.core.windows.net/",
 	  mount_point = "/mnt/adlsgen2storearchie100",extra_configs = configs)
-
 inputPath = "/mnt/adlsgen2storearchie100/data.csv"
 customerTablePath = "/mnt/adlsgen2storearchie100/delta-tables/customers"
 
@@ -88,14 +85,14 @@ rawDataDF = (spark.read.option("header", "true").schema(inputSchema).csv(adlsPat
 
 After this above code block successfully runs, remove this code block from your notebook.
 
-## Add code that inserts rows into the Databricks Delta table ## 
+
 This code inserts data into a temporary table view by using data from a csv file. The path to that csv file comes from the input widget that you created in an earlier step.
 
 upsertDataDF = (spark.read.option("header", "true").csv(inputPath))
 upsertDataDF.createOrReplaceTempView("customer_data_to_upsert")
 
 
-## Add the following code to merge the contents of the temporary table view with the Databricks Delta table.
+The following code to merge the contents of the temporary table view with the Databricks Delta table.
 %sql
 MERGE INTO customer_data cd
 USING customer_data_to_upsert cu
@@ -121,13 +118,9 @@ WHEN NOT MATCHED
     cu.CustomerID,
     cu.Country)
    
-
-# Select if rows from the file have been inserted #    
+Select if rows from the file have been inserted 
    %sql select * from customer_data
     
-
-
-
 ### Create a job in Azure Databricks ### 
 In this section, you'll perform these tasks:
 
