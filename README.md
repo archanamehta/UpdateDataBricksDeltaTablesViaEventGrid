@@ -21,11 +21,9 @@ In this tutorial, we will create the following Azure Services
 
 
 
-# Create a ResourceGroup ie: DataProcessingRG  # 
+### Create a ResourceGroup ie: DataProcessingRG ###
 
-![HDInsight Kafka Schema Registry](https://github.com/arnabganguly/Kafkaconnect/blob/master/images/pic1.png)
-
-
+(https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateResourceGroup.png)
 
 
 Create an ADLS Gen2 Storage Account called "processorderstore". Within this storage account create 
