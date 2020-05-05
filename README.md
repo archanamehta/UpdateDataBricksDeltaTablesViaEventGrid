@@ -23,9 +23,10 @@ In this tutorial, we will create the following Azure Services
 
 * Create Azure Key Vault , Select "Add access policy", then select the "key, secret, and certificate permissions" you want to grant your application. Select the service principal (in our case Service prinipal name : dataprocessing) created previously.Select Add to add the access policy, then Save to commit your changes.
  Create a Secret and save the Name of the Secret. In our case Secret name is : adlsgen2secret. 
+ ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateAzureKeyVaultSecret.png)
 
-* Make sure the Azure Storage Account has "Storage Blob Data Owner" role assigned to the Service Prinipal.
-
+* Make sure the Azure Storage Account has "Storage Blob Data Owner" role assigned to the Service Prinipal. Following should be the Access Controls for Storage Account 
+ ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/AzureStorageAccessControl.png)
 
 ### Create a ResourceGroup ie: DataProcessingRG ###
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateResourceGroup.png)
