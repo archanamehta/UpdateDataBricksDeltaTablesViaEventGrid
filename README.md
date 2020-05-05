@@ -56,7 +56,7 @@ In this tutorial, we will create the following Azure Services
 	ADB Scope : adlsen2adbscope
 	Resource Id : /subscriptions/<subscription id>/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
 
-#### Granting the Service Principal permissions in ADLS Gen 2 
+#### Granting Service Principal permissions for ADLS Gen 2 
 	az ad sp show --id <Application Id> --query objectId
 	Object Id : 791d4933-9de5-4ee8-a048-dbf69fba3a45
 	Go to Azure Storage Explorer and add the Above Object Id to ADLS Gen2 Folders via Manage Access 
@@ -90,12 +90,11 @@ In the Azure portal, go to the Azure Databricks workspace that you created, and 
 Based on the Azure Databricks Workspace Name,  generate the following URL to Create Secret Scope. In our case the name of the Databricks Workspace is "adb-410949980884417.17.azuredatabricks.net";  
 Hence the generate URL is:https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope 
 
-Go to the following URL ie: https://<<<databricks-instance>>>#secrets/createScope to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase. 
+	Go to the following URL ie: https://<databricks-instance>#secrets/createScope to create Secret Scope. This URL is case sensitive; scope in createScope must be uppercase. 
 
-#### Enter the DNS name of the Azure Key Vault created earlier
-#### Enter the Resource Id as follows eg: /subscriptions/<<<Subscription Id>>>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<<<Azure Key Vault name >>>. 
-
-In our case Resouurce id : /subscriptions/<Subscription Id>/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
+	Enter the DNS name of the Azure Key Vault created earlier
+	Enter the Resource Id as follows eg: /subscriptions/<Subscription Id>/resourceGroups/<Resource Group Name>/providers/Microsoft.KeyVault/vaults/<Azure Key Vault name>. 
+	In our case Resouurce id : /subscriptions/<Subscription Id>/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
 	
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADBSecretScope.png)
 
@@ -104,84 +103,84 @@ In our case Resouurce id : /subscriptions/<Subscription Id>/resourceGroups/DataP
 ### Create a Python Notebook ###
 Copy and paste the following code block into the first cell, but don't run this code yet. This code creates a widget named source_file. Later, you'll create an Azure Function that calls this code and passes a file path to that widget. This code also authenticates your service principal with the storage account, and creates some variables that you'll use in other cells 
 
-dbutils.widgets.text('source_file', "", "Source File")
-spark.conf.set("fs.azure.account.auth.type.processordersstore.dfs.core.windows.net", "OAuth") 
-spark.conf.set("fs.azure.account.oauth.provider.type.processordersstore.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
-spark.conf.set("fs.azure.account.oauth2.client.id.processordersstore.dfs.core.windows.net", "<Application Id> ") 
-spark.conf.set("fs.azure.account.oauth2.client.secret.processordersstore.dfs.core.windows.net", dbutils.secrets.get(scope = "adlsen2adbscope", key = "<Azure Key Vault Secret>"))
-spark.conf.set("fs.azure.account.oauth2.client.endpoint.processordersstore.dfs.core.windows.net", "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/oauth2/token")
-adlsPath = 'abfss://data@processordersstore.dfs.core.windows.net/'
-inputPath = adlsPath + dbutils.widgets.get('source_file')
-customerTablePath = adlsPath + 'delta-tables/customers'
+	dbutils.widgets.text('source_file', "", "Source File")
+	spark.conf.set("fs.azure.account.auth.type.processordersstore.dfs.core.windows.net", "OAuth") 
+	spark.conf.set("fs.azure.account.oauth.provider.type.processordersstore.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+	spark.conf.set("fs.azure.account.oauth2.client.id.processordersstore.dfs.core.windows.net", "<Application Id> ") 
+	spark.conf.set("fs.azure.account.oauth2.client.secret.processordersstore.dfs.core.windows.net", dbutils.secrets.get(scope = "adlsen2adbscope", key = "<Azure Key Vault Secret>"))
+	spark.conf.set("fs.azure.account.oauth2.client.endpoint.processordersstore.dfs.core.windows.net", "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/oauth2/token")
+	adlsPath = 'abfss://data@processordersstore.dfs.core.windows.net/'
+	inputPath = adlsPath + dbutils.widgets.get('source_file')
+	customerTablePath = adlsPath + 'delta-tables/customers'
 
-#Create a Mount of the Azure Storage 
-dbutils.fs.mount(
-	  source = "abfss://data@processordersstore.dfs.core.windows.net/",
-	  mount_point = "/mnt/adlsgen2storearchie100",extra_configs = configs)
-inputPath = "/mnt/adlsgen2storearchie100/data.csv"
-customerTablePath = "/mnt/adlsgen2storearchie100/delta-tables/customers"
+	#Create a Mount of the Azure Storage 
+	dbutils.fs.mount(
+		  source = "abfss://data@processordersstore.dfs.core.windows.net/",
+		  mount_point = "/mnt/adlsgen2storearchie100",extra_configs = configs)
+	inputPath = "/mnt/adlsgen2storearchie100/data.csv"
+	customerTablePath = "/mnt/adlsgen2storearchie100/delta-tables/customers"
 
 
 #### This code creates the Databricks Delta table Within your storage account, and then loads some initial data from the csv file that you uploaded earlier.
 
-from pyspark.sql.types import StructType, StructField, DoubleType, IntegerType, StringType
-inputSchema = StructType([
-StructField("InvoiceNo", IntegerType(), True),
-StructField("StockCode", StringType(), True),
-StructField("Description", StringType(), True),
-StructField("Quantity", IntegerType(), True),
-StructField("InvoiceDate", StringType(), True),
-StructField("UnitPrice", DoubleType(), True),
-StructField("CustomerID", IntegerType(), True),
-StructField("Country", StringType(), True)
-])
+	from pyspark.sql.types import StructType, StructField, DoubleType, IntegerType, StringType
+	inputSchema = StructType([
+	StructField("InvoiceNo", IntegerType(), True),
+	StructField("StockCode", StringType(), True),
+	StructField("Description", StringType(), True),
+	StructField("Quantity", IntegerType(), True),
+	StructField("InvoiceDate", StringType(), True),
+	StructField("UnitPrice", DoubleType(), True),
+	StructField("CustomerID", IntegerType(), True),
+	StructField("Country", StringType(), True)
+	])
 
-rawDataDF = (spark.read.option("header", "true").schema(inputSchema).csv(adlsPath + 'input'))
-(rawDataDF.write.mode("overwrite").format("delta").saveAsTable("customer_data", path=customerTablePath))
-#### After this above code block successfully runs, remove this code block from your notebook. ####
+	rawDataDF = (spark.read.option("header", "true").schema(inputSchema).csv(adlsPath + 'input'))
+	(rawDataDF.write.mode("overwrite").format("delta").saveAsTable("customer_data", path=customerTablePath))
+	#### After this above code block successfully runs, remove this code block from your notebook. ####
 
 
 
-#### This code inserts data into a temporary table view by using data from a csv file. The path to that csv file comes from the input widget that you created in an earlier step. ####
+	#### This code inserts data into a temporary table view by using data from a csv file. The path to that csv file comes from the input widget that you created in an earlier step. ####
 
-upsertDataDF = (spark.read.option("header", "true").csv(inputPath))
-upsertDataDF.createOrReplaceTempView("customer_data_to_upsert")
+	upsertDataDF = (spark.read.option("header", "true").csv(inputPath))
+	upsertDataDF.createOrReplaceTempView("customer_data_to_upsert")
 
 
 #### The following code to merge the contents of the temporary table view with the Databricks Delta table. ####
 
-%sql
-MERGE INTO customer_data cd
-USING customer_data_to_upsert cu
-ON cd.CustomerID = cu.CustomerID
-WHEN MATCHED THEN
-  UPDATE SET
-    cd.StockCode = cu.StockCode,
-    cd.Description = cu.Description,
-    cd.InvoiceNo = cu.InvoiceNo,
-    cd.Quantity = cu.Quantity,
-    cd.InvoiceDate = cu.InvoiceDate,
-    cd.UnitPrice = cu.UnitPrice,
-    cd.Country = cu.Country
-WHEN NOT MATCHED
-  THEN INSERT (InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country)
-  VALUES (
-    cu.InvoiceNo,
-    cu.StockCode,
-    cu.Description,
-    cu.Quantity,
-    cu.InvoiceDate,
-    cu.UnitPrice,
-    cu.CustomerID,
-    cu.Country)
+	%sql
+	MERGE INTO customer_data cd
+	USING customer_data_to_upsert cu
+	ON cd.CustomerID = cu.CustomerID
+	WHEN MATCHED THEN
+	  UPDATE SET
+	    cd.StockCode = cu.StockCode,
+	    cd.Description = cu.Description,
+	    cd.InvoiceNo = cu.InvoiceNo,
+	    cd.Quantity = cu.Quantity,
+	    cd.InvoiceDate = cu.InvoiceDate,
+	    cd.UnitPrice = cu.UnitPrice,
+	    cd.Country = cu.Country
+	WHEN NOT MATCHED
+	  THEN INSERT (InvoiceNo, StockCode, Description, Quantity, InvoiceDate, UnitPrice, CustomerID, Country)
+	  VALUES (
+	    cu.InvoiceNo,
+	    cu.StockCode,
+	    cu.Description,
+	    cu.Quantity,
+	    cu.InvoiceDate,
+	    cu.UnitPrice,
+	    cu.CustomerID,
+	    cu.Country)
    
 #### Select if rows from the file have been inserted 
-   %sql select * from customer_data
+	   %sql select * from customer_data
     
 ## Create a job within Azure Databricks ## 
 Create a Job that runs the notebook that you created earlier. Later, you'll create an Azure Function that runs this job when an event is raised.
 
-Click Jobs.In the Jobs page, click Create Job. Give the job a name, and then choose the upsert-order-data workbook. In our case the Job Name: upsert-order-data and NoteBook Name: dataprocessing
+	Click Jobs.In the Jobs page, click Create Job. Give the job a name, and then choose the upsert-order-data workbook. In our case the Job Name: upsert-order-data and NoteBook Name: dataprocessing
 
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateADBSecretScope.png)
 
@@ -259,7 +258,7 @@ In this section, you'll create an Event Grid subscription that calls the Azure F
 ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/CreateEventGridSubscriptionV3.png)
 
 
-## Test the Event Grid subscription
+# Test the Event Grid subscription
 
 Create a file named customer-order.csv, paste the following information into that file, and save it to your local computer.
 
@@ -277,10 +276,3 @@ Uploading a file raises the Microsoft.Storage.BlobCreated event. Event Grid noti
 
 	In a new workbook cell, run this query in a cell to see the updated delta table.
 	%sql select * from customer_data
-
-
-
-
-
-
-
