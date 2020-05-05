@@ -7,7 +7,7 @@ A Small solution that enables a user to populate a Databricks Delta table by upl
 describes a sales order. You'll build this solution by connecting together an Event Grid subscription, an Azure Function, 
 and a Job in Azure Databricks.
 
-In this tutorial, we will create the following 
+In this tutorial, we will create the following Azure Services
 
 1. Create Azure Data Lake Gen 2 Storage   
 2. Create a Service Principal 
@@ -21,7 +21,10 @@ In this tutorial, we will create the following
 
 
 
-Create a ResourceGroup call DataProcessingRG 
+# Create a ResourceGroup ie: DataProcessingRG  # 
+
+![HDInsight Kafka Schema Registry](https://github.com/arnabganguly/Kafkaconnect/blob/master/images/pic1.png)
+
 
 
 
@@ -185,6 +188,23 @@ WHEN NOT MATCHED
 # Select if rows from the file have been inserted #    
    %sql select * from customer_data
     
+
+# Create a Job within Azure Data Bricks # 
+Create a Job that runs the notebook that you created earlier. Later, you'll create an Azure Function that runs this job when an event is raised.
+
+Click Jobs.
+
+In the Jobs page, click Create Job.
+
+Give the job a name, and then choose the upsert-order-data workbook.
+
+
+
+# Create an Azure Function
+Create an Azure Function that runs the Job.
+
+In the upper corner of the Databricks workspace, choose the people icon, and then choose User settings.
+
 
 
 
