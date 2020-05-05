@@ -33,12 +33,12 @@ In this tutorial, we will create the following Azure Services
  ![HDInsight Kafka Schema Registry](https://github.com/archanamehta/UpdateDataBricksDeltaTablesViaEventGrid/blob/master/Images/AzureStorageAccessControl.png)
 
 ### SAVE THE FOLLOWING CONFIGURATIONS ### 
----Azure Storage Account 
+--- Azure Storage Account--- 
 Storage Account Name : processordersstore
 Storage Key : <Storage Key> 
 Storage Connection : <Storage Connection String> 
   
---Create Application
+--- Create Application --- 
 Application Name : dataprocessing 
 Application Id : <Application Id > 
 Tenant Id : <Tenant Id> 
@@ -46,15 +46,20 @@ Object Id : <Object Id >
 client-Secret : <client Secret> 
 Value : <Client Secret Value > 
     
---Azure Key Vault 
+--- Azure Key Vault --- 
 Key Vault : <URL> ie: https://archiekv.vault.azure.net/ 
 Secret Name : adlsgen2secret
 Secret Value : <Secret Value > 
 
---Azure Data Bricks Scope 
+--- Azure Data Bricks Scope --- 
 Create ADB Scope URL : https://adb-410949980884417.17.azuredatabricks.net/?o=5135496090486482#secrets/createScope
 ADB Scope : adlsen2adbscope
 Resource Id : /subscriptions/<subscription id>/resourceGroups/DataProcessingRG/providers/Microsoft.KeyVault/vaults/archiekv
+
+--- Granting the Service Principal permissions in ADLS Gen 2 --- 
+az ad sp show --id <Application Id> --query objectId
+Object Id : 791d4933-9de5-4ee8-a048-dbf69fba3a45
+Go to Azure Storage Explorer and add the Above Object Id to ADLS Gen2 Folders via Manage Access 
 
 
 ### Create a ResourceGroup ie: DataProcessingRG ###
@@ -113,7 +118,7 @@ inputPath = "/mnt/adlsgen2storearchie100/data.csv"
 customerTablePath = "/mnt/adlsgen2storearchie100/delta-tables/customers"
 
 
-# This code creates the Databricks Delta table Within your storage account, and then loads some initial data from the csv file that you uploaded earlier.
+#### This code creates the Databricks Delta table Within your storage account, and then loads some initial data from the csv file that you uploaded earlier.####
 
 from pyspark.sql.types import StructType, StructField, DoubleType, IntegerType, StringType
 inputSchema = StructType([
@@ -129,16 +134,16 @@ StructField("Country", StringType(), True)
 
 rawDataDF = (spark.read.option("header", "true").schema(inputSchema).csv(adlsPath + 'input'))
 (rawDataDF.write.mode("overwrite").format("delta").saveAsTable("customer_data", path=customerTablePath))
-# After this above code block successfully runs, remove this code block from your notebook.
+#### After this above code block successfully runs, remove this code block from your notebook. ####
 
 
-# This code inserts data into a temporary table view by using data from a csv file. The path to that csv file comes from the input widget that you created in an earlier step.
+#### This code inserts data into a temporary table view by using data from a csv file. The path to that csv file comes from the input widget that you created in an earlier step. ####
 
 upsertDataDF = (spark.read.option("header", "true").csv(inputPath))
 upsertDataDF.createOrReplaceTempView("customer_data_to_upsert")
 
 
-# The following code to merge the contents of the temporary table view with the Databricks Delta table.
+#### The following code to merge the contents of the temporary table view with the Databricks Delta table. ####
 
 %sql
 MERGE INTO customer_data cd
@@ -192,10 +197,6 @@ DBX_JOB_ID: 1
 
 
 
--- Granting the Service Principal permissions in ADLS Gen 2 --- 
-az ad sp show --id <Application Id> --query objectId
-Object Id : 791d4933-9de5-4ee8-a048-dbf69fba3a45
-Go to Azure Storage Explorer and add the Above Object Id to ADLS Gen2 Folders via Manage Access 
 
 
 
